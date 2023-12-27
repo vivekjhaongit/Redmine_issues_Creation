@@ -1,0 +1,65 @@
+import csv
+import requests
+from datetime import datetime
+
+REDMINE_URL = "Redmine_Instance"
+REDMINE_API_KEY = "Api_Key"
+
+
+def create_redmine_issue(project_id, tracker_id, status_id, priority_id, subject, description, start_date,
+                         assigned_to_id, done_ratio, is_private, total_estimated_hours, spent_hours, total_spent_hours):
+    url = f"{REDMINE_URL}/issues.json"
+
+    headers = {
+        "Content-Type": "application/json",
+        "X-Redmine-API-Key": REDMINE_API_KEY,
+    }
+
+    # Convert date format
+    start_date = convert_date_format(start_date)
+
+    data = {
+        "issue": {
+            "project_id": project_id,
+            "tracker_id": tracker_id,
+            "status_id": status_id,
+            "priority_id": priority_id,
+            "subject": subject,
+            "description": description,
+            "start_date": start_date,
+            "assigned_to_id": assigned_to_id,
+            "done_ratio": done_ratio,
+            "is_private": is_private,
+            "total_estimated_hours": total_estimated_hours,
+            "spent_hours": spent_hours,
+            "total_spent_hours": total_spent_hours,
+        }
+    }
+
+    print("Creating issue with data:", data)
+
+    response = requests.post(url, json=data, headers=headers)
+
+    if response.status_code == 201:
+        issue_id = response.json()["issue"]["id"]
+        print(f"Issue created with ID: {issue_id}")
+    else:
+        print(f"Failed to create issue. Status code: {response.status_code}, Response: {response.text}")
+
+
+def read_csv_and_create_issues(csv_file_path):
+    with open(csv_file_path, 'r', encoding='utf-8-sig') as csvfile:
+        csvreader = csv.DictReader(csvfile)
+        for row in csvreader:
+            create_redmine_issue(**row)
+
+
+def convert_date_format(date_str):
+    # Convert YYYY/MM/DD to YYYY-MM-DD
+    date_object = datetime.strptime(date_str, "%Y/%m/%d")
+    return date_object.strftime("%Y-%m-%d")
+
+
+if __name__ == "__main__":
+    csv_file_path = r"csv_path"
+    read_csv_and_create_issues(csv_file_path)
